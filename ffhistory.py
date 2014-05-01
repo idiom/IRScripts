@@ -12,7 +12,7 @@ import argparse
  
 def calctime(days,basetime):
     '''
-    Calculate the time offset based on the last entry. 
+    Calculate the time offset based on the last entry in moz_places. 
     '''
     nbase = datetime.fromtimestamp(basetime/1000000.0)
     bdate = time.mktime(datetime(nbase.year,nbase.month,nbase.day,0,0,0).timetuple())*1000000
@@ -64,7 +64,6 @@ def main(target, days,sr):
     for row in c:        
         if row[0].startswith('http'):        
             
-            #dirty filter for local servers
             print '%s - %s' % (row[2],row[0])
             if sr:
                 sitereview(row[0])
