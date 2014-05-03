@@ -83,7 +83,11 @@ class FFHistory:
             sitedata['locked'] = data['locked']
             sitedata['linkable'] = data['linkable']
             sitedata['unrated'] = data['unrated']
-            sitedata['ratedate'] = data['ratedate'].split(':')[1].split('<img')[0].strip()
+            if not sitedata['unrated']:
+                sitedata['ratedate'] = data['ratedate'].split(':')[1].split('<img')[0].strip()
+            else:
+                sitedata['ratedate'] = ''
+                
         except Exception as e:
             category = e                
         finally:
