@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf8 -*-
 
 import urllib
 import urllib2
@@ -62,26 +63,31 @@ class FFHistory:
         bdate = time.mktime(datetime(nbase.year,nbase.month,nbase.day,0,0,0).timetuple())*1000000
         return (bdate - ((86400 * int(days)) * 1000000))
  
-def sitereview(target_url):
-    
-    #TODO: Figure out query limit and throttle requests. 
-    url = 'http://sitereview.bluecoat.com/rest/categorization'
-    targeturl = {'url' : target_url}
-    data = urllib.urlencode(targeturl)                
-    req = urllib2.Request(url, data)
-    response = urllib2.urlopen(req)
-    data = json.load(response) 
-    
-    #Don't hammer the service
-    time.sleep(1)                                   
-                
-    try:  
-        #TODO return a tuple of usefull fields
-        category = data['categorization'].split('>')[1].split('<')[0]  
-        return category                      
-    except Exception as e:
-        return e                
- 
+    def sitereview(self,target_url):
+        
+        #TODO: Figure out query limit and throttle requests. 
+        try:
+            url = 'http://sitereview.bluecoat.com/rest/categorization'
+            targeturl = {'url' : target_url}
+            data = urllib.urlencode(targeturl)                
+            req = urllib2.Request(url, data)
+            response = urllib2.urlopen(req)
+            data = json.load(response) 
+
+            #Don't hammer the service
+            time.sleep(1)                                   
+            
+            sitedata = {}
+          
+            sitedata['category'] = data['categorization'].split('>')[1].split('<')[0]
+            sitedata['locked'] = data['locked']
+            sitedata['linkable'] = data['linkable']
+            sitedata['unrated'] = data['unrated']
+            sitedata['ratedate'] = data['ratedate'].split(':')[1].split('<img')[0].strip()
+        except Exception as e:
+            category = e                
+        finally:
+            return sitedata
  
 
 def main():
@@ -97,11 +103,16 @@ def main():
     urls = ffh.gethistory(args.days)
     for url in urls:
         if args.sitereview:
+            sitedata = ffh.sitereview(url[1])
             print
             print '==================================='
-            print 'Date: %s'         % url[0]
-            print 'URL: %s'         % url[1]
-            print 'Category: %s'    % sitereview(url[1])
+            print
+            print 'Date:      %s' % url[0]
+            print 'URL:       %s' % url[1]
+            print 'Category:  %s' % sitedata['category']
+            print 'Rate Date: %s' % sitedata['ratedate']
+            print 'Unrated:   %s' % sitedata['unrated']
+            print
             print '==================================='
         else:
             print '%s - %s' % (url[0],url[1])
