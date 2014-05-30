@@ -44,7 +44,7 @@ class BHistory:
         
     def processfile(self):
         visit_column = None
-        history_tablename = None
+        history_tablename = None++
         
         #Get Browser Type
         self.cursor.execute('''SELECT count(1) FROM sqlite_master WHERE type='table' AND name='moz_places' ''')
@@ -67,16 +67,21 @@ class BHistory:
         self.cursor.execute('''SELECT MAX(%s) FROM %s ''' % (visit_column,history_tablename))
         self.lastvisittime = self.cursor.fetchone()[0]
         
-        #if self.browsertype == 0:
-        #    self.lastvisittime = self.lastvisittime - 11644473600000000
-        
     def gethistory(self,days):
         ctime = self.calctime(days)
-        #chrome query
-        #SELECT url,datetime(((last_visit_time-11644473600000000)/1000000),'unixepoch','localtime') as last_visit_time FROM urls
+
         if self.browsertype == 0:            
-            self.cursor.execute('''SELECT url, id, datetime(((last_visit_time-11644473600000000)/1000000),'unixepoch','localtime') as last_visit_time
-                            FROM urls where last_visit_time >= %d''' % ctime)
+            self.cursor.execute('''SELECT url, id, datetime(((last_visit_time-11644473600000000)/1000000),'unixepoch','localtime') 
+                                as last_visit_time
+                                FROM urls where last_visit_time >= %d''' % ctime)
+        else:
+
+            self.cursor.execute('''SELECT moz_places.url, id, 
+                            datetime(last_visit_date/1000000, 
+                            'unixepoch', 'localtime') 
+                            FROM moz_places where last_visit_date >= %d''' % ctime)
+
+        
         urls = []
         for row in self.cursor:        
             if row[0].startswith('http'):
@@ -113,11 +118,11 @@ class BHistory:
             sitedata['locked'] = data['locked']
             sitedata['linkable'] = data['linkable']
             sitedata['unrated'] = data['unrated']
+            sitedata['ratedate'] = 'Unknown'
+            
             if not sitedata['unrated']:
                 sitedata['ratedate'] = data['ratedate'].split(':')[1].split('<img')[0].strip()
-            else:
-                sitedata['ratedate'] = ''
-                
+                                
         except Exception as e:
             category = e                
         finally:

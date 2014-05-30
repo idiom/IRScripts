@@ -1,9 +1,9 @@
 IRScripts
 =========
 
-A collection of scripts mainly for Incident Response.
+Collection of Incident Response scripts.
 
 #Scripts#
 
- * ffhistory.py - Parse Firefox browser history. 
- * ipquery.py - Query VT for information on the IP.
+ * bhistory.py  - Parse Firefox or Chrome browser history.
+ * ipquery.py   - Query VT for information on the IP.
