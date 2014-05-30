@@ -41,10 +41,9 @@ class BHistory:
         else:
             raise Exception('File doesn\'t exist...')
             
-        
     def processfile(self):
         visit_column = None
-        history_tablename = None++
+        history_tablename = None
         
         #Get Browser Type
         self.cursor.execute('''SELECT count(1) FROM sqlite_master WHERE type='table' AND name='moz_places' ''')
@@ -142,17 +141,18 @@ def main():
     urls = ffh.gethistory(args.days)
     for url in urls:
         if args.sitereview:
-            sitedata = ffh.sitereview(url[1])
-            print
-            print '==================================='
-            print
-            print 'Date:      %s' % url[0]
-            print 'URL:       %s' % url[1]
-            print 'Category:  %s' % sitedata['category']
-            print 'Rate Date: %s' % sitedata['ratedate']
-            print 'Unrated:   %s' % sitedata['unrated']
-            print
-            print '==================================='
+            if args.exclude not in url[1]:
+                sitedata = ffh.sitereview(url[1])
+                print
+                print '==================================='
+                print
+                print 'Date:      %s' % url[0]
+                print 'URL:       %s' % url[1]
+                print 'Category:  %s' % sitedata['category']
+                print 'Rate Date: %s' % sitedata['ratedate']
+                print 'Unrated:   %s' % sitedata['unrated']
+                print
+                print '==================================='
         else:
             print '%s - %s' % (url[0],url[1])
  
