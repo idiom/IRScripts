@@ -92,6 +92,26 @@ class IPInfo:
                 break
         return exists
         
+    def querydshieldtopscanners(self):
+        exists = False
+        response = self.__sendrequest('http://feeds.dshield.org/top10-2.txt')
+        for line in response:
+            if self.ip in line:
+                exists = True
+                break
+        return exists
+    
+    
+        
+    def queryzeustracker(self):
+        exists = False
+        response = self.__sendrequest('https://zeustracker.abuse.ch/blocklist.php?download=badips')
+        for line in response:
+            if self.ip in line:
+                exists = True
+                break
+        return exists
+        
     def queryvt(self):
         if IPInfo.VTAPIKEY == '---Your API Key---':
             return {'response_code':0,'verbose_msg':'No API Key'}
@@ -105,13 +125,15 @@ def main():
     parser = argparse.ArgumentParser(description="Query services for information about an IP Address")
     parser.add_argument("ip", help="The target IP address")  
     parser.add_argument('--all',dest='all',action='store_true',help="Query All Services") 
-    parser.add_argument('--ds',dest='ds',action='store_true',help="Query DShield") 
+    parser.add_argument('--ds',dest='ds',action='store_true',help="Query DShield for Info on IP")
+    parser.add_argument('--dsts',dest='dsts',action='store_true',help="Query DShield Top Scanners")     
     parser.add_argument('--brk',dest='brk',action='store_true',help="Query Berkley Agressive IPs") 
     parser.add_argument('--bld',dest='bld',action='store_true',help="Query Blocklist.de") 
     parser.add_argument('--ashun',dest='ashun',action='store_true',help="Query Autoshun") 
     parser.add_argument('--ethreat',dest='ethreat',action='store_true',help="Query Emerging Threats") 
     parser.add_argument('--mc',dest='mc',action='store_true',help="Query malc0de DB") 
     parser.add_argument('--sh',dest='sh',action='store_true',help="Query Spamhaus Blacklist") 
+    parser.add_argument('--zs',dest='zs',action='store_true',help="Query Zeus Tracker Blacklist") 
     parser.add_argument('--vt',dest='vt',action='store_true',help="Query VirusTotal. Requires Public API Key")  
     parser.add_argument('--debug',dest='debug',action='store_true',help="Print debug information")
     args = parser.parse_args()
@@ -132,7 +154,7 @@ def main():
         print 'Checking Berkley Agressive IPs'
         data = ip.queryberkley()
         print '-'*32  
-        print '  {:15} {:15}'.format('Identified',str(data['exists']))
+        print '  {:15} {:15}'.format('Found?',str(data['exists']))
         if data['exists']:
             print '  {:15} {:15}'.format('Last Updated',data['lasttime'])
         print '-'*32 
@@ -142,7 +164,7 @@ def main():
         print 'Checking blocklist.de'
         data = ip.queryblde()
         print '-' * 32
-        print '  {:15} {:15}'.format('Identified',str(data))
+        print '  {:15} {:15}'.format('Found?',str(data))
         print '-' * 32
         print
     
@@ -150,7 +172,7 @@ def main():
         print 'Checking autoshun'
         data = ip.queryashun()
         print '-' * 32
-        print '  {:15} {:15}'.format('Identified',str(data['exists']))
+        print '  {:15} {:15}'.format('Found?',str(data['exists']))
         if data['exists']:
             print '  {:15} {:15}'.format('Last Updated',data['updated'])
             print '  {:15} {:15}'.format('Comment',data['comment'])
@@ -160,7 +182,7 @@ def main():
         print 'Checking Emerging Threats'
         data = ip.queryethreats()
         print '-' * 32
-        print '  {:15} {:15}'.format('Identified',str(data))
+        print '  {:15} {:15}'.format('Found?',str(data))
         print '-' * 32
         print
     
@@ -168,14 +190,31 @@ def main():
         print 'Checking malc0de'
         data = ip.querymalcode()
         print '-' * 32
-        print '  {:15} {:15}'.format('Identified',str(data))
+        print '  {:15} {:15}'.format('Found?',str(data))
         print '-' * 32
         print
+    
     if args.sh or args.all:
         print 'Checking spamhaus Blacklist'
         data = ip.queryspamhausbl()
         print '-' * 32
-        print '  {:15} {:15}'.format('Identified',str(data))
+        print '  {:15} {:15}'.format('Found?',str(data))
+        print '-' * 32
+        print
+    
+    if args.sh or args.all:
+        print 'Checking Zeus Tracker Blacklist'
+        data = ip.queryzeustracker()
+        print '-' * 32
+        print '  {:15} {:15}'.format('Found?',str(data))
+        print '-' * 32
+        print
+        
+    if args.dsts or args.all:
+        print 'Checking DShield Top Scanners'
+        data = ip.querydshieldtopscanners()
+        print '-' * 32
+        print '  {:15} {:15}'.format('Found?',str(data))
         print '-' * 32
         print
         
@@ -184,10 +223,10 @@ def main():
         data = ip.queryvt()
         print '-' * 32
         if data['response_code'] == 0:
-            print '  {:15} {:15}'.format('Identified','False')
+            print '  {:15} {:15}'.format('Found?','False')
             print '  {:15} {:15}'.format('Message',data['verbose_msg'])
         else:
-            print '  {:15} {:15}'.format('Identified','True')
+            print '  {:15} {:15}'.format('Found?','True')
             print 
             print '  {:20} {:20}'.format('Last Resolved','Hostname')
             
