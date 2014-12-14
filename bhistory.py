@@ -11,8 +11,6 @@ from datetime import datetime
 import argparse
 import os.path
  
- 
- 
 class BHistory:
     
     browser = {
@@ -38,12 +36,19 @@ class BHistory:
             self.dbcon = sqlite3.connect(filename)
             self.cursor = self.dbcon.cursor()
             self.processfile()
+            print 'Total URLs Detected: %d' % self.urlcount
+            print 'Last Visit: %s' % self.lastvisittime
+            if self.nvtcount > 0:
+                print 'Warning! A number of records were detected with no timestamp.'
+                print 'with no timestamp: %d' % self.nvtcount
         else:
             raise Exception('File doesn\'t exist...')
             
     def processfile(self):
         visit_column = None
         history_tablename = None
+        
+        print 'Processing File....'
         
         #Get Browser Type
         self.cursor.execute('''SELECT count(1) FROM sqlite_master WHERE type='table' AND name='moz_places' ''')
@@ -66,6 +71,10 @@ class BHistory:
         self.cursor.execute('''SELECT MAX(%s) FROM %s ''' % (visit_column,history_tablename))
         self.lastvisittime = self.cursor.fetchone()[0]
         
+        #Get count of records with a null timestamp
+        self.cursor.execute('''SELECT count(1) FROM %s WHERE %s IS NULL ''' % (history_tablename,visit_column))
+        self.nvtcount = self.cursor.fetchone()[0]
+        
     def gethistory(self,days):
         ctime = self.calctime(days)
 
@@ -82,7 +91,7 @@ class BHistory:
 
         
         urls = []
-        for row in self.cursor:        
+        for row in self.cursor:  
             if row[0].startswith('http'):
                 url = row[2],row[0]
                 urls.append(url)
@@ -132,7 +141,7 @@ def main():
     parser = argparse.ArgumentParser(description="A script to work with the Firefox History")
     parser.add_argument("file", help="The places.sqlite file to process")
     parser.add_argument("days", help="The number of days to process. This is the number of days since the last item in the moz_places table")    
-    parser.add_argument('-d','--debug',dest='debug',action='store_true',help="Print debug messages ")
+    parser.add_argument('--debug',dest='debug',action='store_true',help="Print debug messages ")
     parser.add_argument('-s','--sitereview',dest='sitereview',action='store_true',help="Query bluecoat for URL category.")
     parser.add_argument('-e','--exclude',dest='exclude',help="Strings to exclude from any external queries")
     args = parser.parse_args()
