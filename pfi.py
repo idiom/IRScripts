@@ -9,6 +9,8 @@ __version__ = '0.0.2'
 
   1.19.2015 - Initial Revision 
   1.20.2014 - Fixed import issues and minor bugs
+            - Added sha256 to default output
+  
 
 """
 
@@ -136,6 +138,7 @@ class FileInfo:
         fobj += " First Bytes: %s  \n" % self.getbytes(0,16)
         fobj += " MD5:         %s  \n" % self.gethash('md5')
         fobj += " SHA1:        %s  \n" % self.gethash('sha1')
+        fobj += " SHA256:        %s  \n" % self.gethash('sha256')
         fobj += " Import Hash: %s  \n" % self.getimphash()
         fobj += " ssdeep:      %s  \n" % self.getfuzzyhash()
         if self.pe is not None:
