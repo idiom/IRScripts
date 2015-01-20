@@ -2,27 +2,29 @@
 
 __description__ = 'Display info about a file.'
 __author__ = 'Sean Wilson'
-__version__ = '0.0.1'
+__version__ = '0.0.2'
 
 """
  --- History ---
 
   1.19.2015 - Initial Revision 
+  1.20.2014 - Fixed import issues and minor bugs
 
 """
 
 
 import argparse 
-import hashlib
+import hashlib 
 import os.path
 from struct import * 
 import time
+import sys
 
 try:
     import pefile
     import peutils
 except Exception as e:
-    print >>sys.stderr, 'Error - Please ensure you install the pefile library' % e
+    print 'Error - Please ensure you install the pefile library %s ' % e
     sys.exit(-1)
 
 class FileInfo:
@@ -53,20 +55,29 @@ class FileInfo:
         return mdata.buffer(f) 
             
     def gethash(self, htype):       
+        f = open(self.filename,'rb')
+        fdat = f.read()
+        f.close()
         if htype == 'md5':
             m = hashlib.md5() 
         elif htype == 'sha1':
             m = hashlib.sha1() 
         elif htype == 'sha256':
             m = hashlib.sha256() 
-        m.update(self.pe.__data__[:])
+        m.update(fdat)
         return m.hexdigest()    
     
     def getimphash(self):
-        if self.pe is not None:
-            return self.pe.get_imphash()
-        else:
-            return 'Skipped...'
+        ihash = ''
+        try:
+            if self.pe is not None:
+                ihash = self.pe.get_imphash()
+            else:
+                ihash = 'Skipped...'
+        except AttributeError as ae:
+            ihash = '"No imphash support, upgrade pefile to a version >= 1.2.10-139'
+        finally:
+            return ihash
     
     def getstringentries(self):
         if self.pe is not None:
