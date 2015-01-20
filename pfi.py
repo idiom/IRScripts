@@ -75,7 +75,7 @@ class FileInfo:
             else:
                 ihash = 'Skipped...'
         except AttributeError as ae:
-            ihash = '"No imphash support, upgrade pefile to a version >= 1.2.10-139'
+            ihash = 'No imphash support, upgrade pefile to a version >= 1.2.10-139'
         finally:
             return ihash
     
