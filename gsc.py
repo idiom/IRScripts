@@ -25,19 +25,27 @@ class GSBQuery:
         pass
 
     def __sendrequest(self,url):
-        response = {'error':''}
+        response = {'error':'', 'result':''}
         try:
             request = urllib2.Request(url)
-            qr = urllib2.urlopen(request, timeout = 10)               
-            #TODO: Handle other HTTP Codes Properly  
+            qr = urllib2.urlopen(request, timeout = 10)                           
             if qr.getcode() == 200:
                 response['result'] = qr.read()
             elif qr.getcode() == 204:
-                response['result'] = 'Not Found'                            
+                response['result'] = 'URL Not Found (OK)'                           
             else:
                 response['result'] = 'Unknown: %d' % qr.getcode()
-        except urllib2.URLError as e:
-            response['error'] = str(e)
+        except urllib2.URLError as e:            
+            if e.code == 400:
+                response['error'] = 'Bad Request: The HTTP request was not correctly formed. [Check APIKey]'
+            elif qr.getcode() == 403:
+                response['error'] = 'Invalid ClientId'
+            elif qr.getcode() == 503:
+                response['result'] = 'Service Unavailable!'
+            elif qr.getcode() == 505:
+                response['result'] = 'HTTP Version not supported'
+            else:
+                response['error'] = str(e)
         except socket.timeout as e:
             response['error'] = str(e)
         return response
@@ -54,10 +62,10 @@ class GSBQuery:
 
     def report(self,key=''):
         report = ''
-        try:
-            report = self.result['result']
-        except KeyError:
+        if self.result['result'] == '':
             report = self.result['error']
+        else:
+            report = self.result['result']
         return report         
 
 
@@ -66,11 +74,11 @@ def main():
     parser = argparse.ArgumentParser(description="Query Google Safebrowse for status of URL (malware/phishing)")
     parser.add_argument("url", help="The target URL")    
     args = parser.parse_args()
-    
-    print ' Querying for ranking of: %s' % args.url
+    print '\n Querying for ranking of: %s' % args.url
     gq =GSBQuery()
     gq.dispatch(args.url)
-    print ' Result: %s' % gq.report()
+    print ' Result: %s\n' % gq.report()
+    
     return
 
 if __name__ == '__main__':
