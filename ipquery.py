@@ -6,14 +6,20 @@
     Simple script to query VT for 
     resolutions and detections for an IP
     
-'''
-
-import simplejson
+'''   
 import urllib2
 import urllib
 import argparse
 import time
+import sys
 
+try:
+    import simplejson
+except ImportError as e:
+    print 'Error - Please ensure you install the simplejson library (pip install simplejson)'
+    sys.exit(-1)
+    
+    
 _url = "http://www.virustotal.com/vtapi/v2/ip-address/report"
 _apikey = ""
 
