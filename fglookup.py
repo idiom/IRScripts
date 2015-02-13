@@ -20,10 +20,7 @@ except ImportError:
 
 class FGLookup:
 
-    _APIKEY = ''
-
     def __init__(self):
-        self.result = ''
         pass
 
     def check_blacklist(self, target):
