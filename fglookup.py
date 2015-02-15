@@ -87,34 +87,33 @@ class FGLookup:
                 if test[x].h2.string.startswith('WF Rating History'):
                     result['Rating_History'] = {}
                     rows = test[x].find_all('tr')
-                    cnt = 0
+                    ratings = []
                     for row_data in rows:
                         cells = row_data.find_all('td')
-                        result['Rating_History']['Item_%d' % cnt] = (cells[0].string,cells[1].string)
-                        cnt += 1
+                        ratings.append((cells[0].string, cells[1].string))
+                    result['Rating_History'] = ratings
                 elif test[x].h2.string.startswith('IP'):
                     result['IP_Info'] = {}
                     rows = test[x].find_all('tr')
-                    ip_cnt = 0
+                    iplist = []
                     for row_data in rows:
                         cells = row_data.find_all('td')
                         for cell in cells:
                             ips = cell.find_all('a')
                             for ip in ips:
-                                result['IP_Info']['IP_%d' % ip_cnt] = ip.string
-                                ip_cnt += 1
+                                iplist.append(ip.string)
+                    result['IP_Info'] = iplist
                 elif test[x].h2.string.startswith('Shares the domain'):
                     result['Shared_Domains'] = {}
                     rows = test[x].find_all('tr')
-                    host_cnt = 0
+                    domlist = []
                     for row_data in rows:
                         cells = row_data.find_all('td')
-
                         for cell in cells:
                             hosts = cell.find_all('a')
                             for host in hosts:
-                                result['Shared_Domains']['Host_%d' % host_cnt] = host.string
-                                host_cnt += 1
+                                domlist.append(host.string)
+                    result['Shared_Domains'] = domlist
 
             result['Category'] = soup.h3.string.split(':')[1].lstrip(' ')
         except urllib2.URLError as e:
@@ -133,22 +132,21 @@ def print_reputation(rep):
     if 'Rating_History' in rep:
         rep_data += ' {:20}{:64}\n'.format('Rating History:', '')
         for rating in rep['Rating_History']:
-            rep_data += ' {:20}{:64}\n'.format('', '%s - %s' % (rep['Rating_History'][rating][0],
-                                                            rep['Rating_History'][rating][1]))
+            rep_data += ' {:20}{:64}\n'.format('', '%s - %s' % (rating[0], rating[1]))
     else:
         rep_data += ' {:20}{:64}\n'.format('Rating History:', 'Unknown')
 
     if 'IP_Info' in rep:
         rep_data += ' {:20}{:64}\n'.format('IP Info:', '')
         for ip in rep['IP_Info']:
-            rep_data += ' {:20}{:64}\n'.format('', rep['IP_Info'][ip])
+            rep_data += ' {:20}{:64}\n'.format('', ip)
     else:
         rep_data += ' {:20}{:64}\n'.format('IP Info:', 'Unknown')
 
     if 'Shared_Domains' in rep:
         rep_data += ' {:20}{:64}\n'.format('Shared Domains:', '')
         for host in rep['Shared_Domains']:
-            rep_data += ' {:20}{:64}\n'.format('', rep['Shared_Domains'][host])
+            rep_data += ' {:20}{:64}\n'.format('', host)
     else:
         rep_data += ' {:20}{:64}\n'.format('Shared Domains:', 'Unknown')
 
