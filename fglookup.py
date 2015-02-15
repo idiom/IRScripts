@@ -62,7 +62,7 @@ class FGLookup:
             if e.code == 400:
                 result = 'Error: Bad Request'
             elif qr.getcode() == 403:
-                result = 'Error: Invalid ClientId'
+                result = 'Error: 403 - Forbidden!'
             elif qr.getcode() == 503:
                 result = 'Error: Service Unavailable!'
 
@@ -128,7 +128,7 @@ class FGLookup:
             if e.code == 400:
                 result['Error'] = 'Error: Bad Request'
             elif qr.getcode() == 403:
-                result['Error'] = 'Error: Invalid ClientId'
+                result['Error'] = 'Error: 403 - Forbidden!'
             elif qr.getcode() == 503:
                 result['Error'] = 'Error: Service Unavailable!'
         return result
