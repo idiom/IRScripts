@@ -11,6 +11,7 @@ import argparse
 import urllib2
 import urllib
 import sys
+import re
 
 try:
     from bs4 import BeautifulSoup
@@ -71,22 +72,88 @@ class FGLookup:
 
     def check_reputation(self, target):
         url = 'http://www.fortiguard.com/ip_rep/?data=%s&lookup=lookup' % target
-        result = ''
+        result = {}
+        result['Error'] = None
         request = urllib2.Request(url, headers={'User-Agent': self._UserAgent})
         qr = urllib2.urlopen(request, timeout=10)
         try:
             self._represult = qr.read()
             soup = BeautifulSoup(self._represult)
-            result = soup.h3.string
+            test = soup.find_all(class_='graph_inner')
+
+            # Loop through the data sections
+            for x in range(0, len(test)):
+                # Check the Section names
+                if test[x].h2.string.startswith('WF Rating History'):
+                    result['Rating_History'] = {}
+                    rows = test[x].find_all('tr')
+                    cnt = 0
+                    for row_data in rows:
+                        cells = row_data.find_all('td')
+                        result['Rating_History']['Item_%d' % cnt] = (cells[0].string,cells[1].string)
+                        cnt += 1
+                elif test[x].h2.string.startswith('IP'):
+                    result['IP_Info'] = {}
+                    rows = test[x].find_all('tr')
+                    ip_cnt = 0
+                    for row_data in rows:
+                        cells = row_data.find_all('td')
+                        for cell in cells:
+                            ips = cell.find_all('a')
+                            for ip in ips:
+                                result['IP_Info']['IP_%d' % ip_cnt] = ip.string
+                                ip_cnt += 1
+                elif test[x].h2.string.startswith('Shares the domain'):
+                    result['Shared_Domains'] = {}
+                    rows = test[x].find_all('tr')
+                    host_cnt = 0
+                    for row_data in rows:
+                        cells = row_data.find_all('td')
+
+                        for cell in cells:
+                            hosts = cell.find_all('a')
+                            for host in hosts:
+                                result['Shared_Domains']['Host_%d' % host_cnt] = host.string
+                                host_cnt += 1
+
+            result['Category'] = soup.h3.string.split(':')[1].lstrip(' ')
         except urllib2.URLError as e:
             if e.code == 400:
-                result = 'Error: Bad Request'
+                result['Error'] = 'Error: Bad Request'
             elif qr.getcode() == 403:
-                result = 'Error: Invalid ClientId'
+                result['Error'] = 'Error: Invalid ClientId'
             elif qr.getcode() == 503:
-                result = 'Error: Service Unavailable!'
-
+                result['Error'] = 'Error: Service Unavailable!'
         return result
+
+def print_reputation(rep):
+    rep_data = '\nReputation Data\n'
+    rep_data += ' {:20}{:64}\n'.format('Category:', rep['Category'])
+
+    if 'Rating_History' in rep:
+        rep_data += ' {:20}{:64}\n'.format('Rating History:', '')
+        for rating in rep['Rating_History']:
+            rep_data += ' {:20}{:64}\n'.format('', '%s - %s' % (rep['Rating_History'][rating][0],
+                                                            rep['Rating_History'][rating][1]))
+    else:
+        rep_data += ' {:20}{:64}\n'.format('Rating History:', 'Unknown')
+
+    if 'IP_Info' in rep:
+        rep_data += ' {:20}{:64}\n'.format('IP Info:', '')
+        for ip in rep['IP_Info']:
+            rep_data += ' {:20}{:64}\n'.format('', rep['IP_Info'][ip])
+    else:
+        rep_data += ' {:20}{:64}\n'.format('IP Info:', 'Unknown')
+
+    if 'Shared_Domains' in rep:
+        rep_data += ' {:20}{:64}\n'.format('Shared Domains:', '')
+        for host in rep['Shared_Domains']:
+            rep_data += ' {:20}{:64}\n'.format('', rep['Shared_Domains'][host])
+    else:
+        rep_data += ' {:20}{:64}\n'.format('Shared Domains:', 'Unknown')
+
+    print rep_data
+
 
 def main():
     parser = argparse.ArgumentParser(description="Query FortiGuard Reputation and Blacklist")
@@ -94,17 +161,19 @@ def main():
     parser.add_argument('-b', '--blacklist', dest='blacklist', action='store_true', help="Query Blacklist")
     parser.add_argument('-r', '--rep', dest='rep', action='store_true', help="Query Reputation")
     args = parser.parse_args()
-    print '\n Checking: %s' % args.url
+    print '\n Querying for: %s' % args.url
     fgl = FGLookup()
 
     if args.blacklist:
         print ' Blacklist: %s' % fgl.check_blacklist(args.url)
     elif args.rep:
-        print ' %s' % fgl.check_reputation(args.url)
+        print_reputation(fgl.check_reputation(args.url))
     else:
         print ' Blacklist: %s' % fgl.check_blacklist(args.url)
-        print ' %s' % fgl.check_reputation(args.url)
+        print_reputation(fgl.check_reputation(args.url))
     print ''
+
+
 
 if __name__ == '__main__':
     main()
