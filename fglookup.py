@@ -20,38 +20,73 @@ except ImportError:
 
 class FGLookup:
 
-    def __init__(self):
-        pass
+    _UserAgent = 'Mozilla/5.0 (Windows NT 6.3; rv:36.0) Gecko/20100101 Firefox/36.0'
+    _represult = None
+    _blresult  = None
+
+    def __init__(self, agent=None):
+
+        if agent is not None:
+            self._UserAgent = agent
+
 
     def check_blacklist(self, target):
+        """
+
+        Check if the <target> is in the FortiGuard blacklist.
+
+        The target can be an IP address or URL.
+
+        """
+
         url = "http://www.nospammer.net/web/spam_lookup.php"
-        values = {'signature': target}
-        reqdata = urllib.urlencode(values)
-        request = urllib2.Request(url, reqdata)
+        result = ''
+
+        reqdata = urllib.urlencode({'signature': target})
+        request = urllib2.Request(url, reqdata, headers={'User-Agent': self._UserAgent})
+
         qr = urllib2.urlopen(request, timeout=10)
 
-        if qr.getcode() == 200:
-            soup = BeautifulSoup(qr.read())
+        try:
+            self._blresult = qr.read()
+            soup = BeautifulSoup(self._blresult)
             dat = soup.select("tr style")
 
             # The dom is screwy so we need to manually parse out the result.
             # Or more likely I just need to RTFM the soup docs
             block = str(dat[0])
             tl = block.find(target)
-            return block[tl:].split('<')[0].replace('\"', '')
-        else:
-            return 'Error: No Result'
+            result = block[tl:].split('<')[0].replace('\"', '')
+        except urllib2.URLError as e:
+            if e.code == 400:
+                result = 'Error: Bad Request'
+            elif qr.getcode() == 403:
+                result = 'Error: Invalid ClientId'
+            elif qr.getcode() == 503:
+                result = 'Error: Service Unavailable!'
+
+        return result
+
+
 
     def check_reputation(self, target):
         url = 'http://www.fortiguard.com/ip_rep/?data=%s&lookup=lookup' % target
-        request = urllib2.Request(url)
+        result = ''
+        request = urllib2.Request(url, headers={'User-Agent': self._UserAgent})
         qr = urllib2.urlopen(request, timeout=10)
+        try:
+            self._represult = qr.read()
+            soup = BeautifulSoup(self._represult)
+            result = soup.h3.string
+        except urllib2.URLError as e:
+            if e.code == 400:
+                result = 'Error: Bad Request'
+            elif qr.getcode() == 403:
+                result = 'Error: Invalid ClientId'
+            elif qr.getcode() == 503:
+                result = 'Error: Service Unavailable!'
 
-        if qr.getcode() == 200:
-            soup = BeautifulSoup(qr.read())
-            return soup.h3.string
-        else:
-            return 'Error: No Result'
+        return result
 
 def main():
     parser = argparse.ArgumentParser(description="Query FortiGuard Reputation and Blacklist")
@@ -63,12 +98,13 @@ def main():
     fgl = FGLookup()
 
     if args.blacklist:
-        print ' %s' % fgl.check_blacklist(args.url)
+        print ' Blacklist: %s' % fgl.check_blacklist(args.url)
     elif args.rep:
-        fgl.check_reputation(args.url)
-    else:
-        print ' %s' % fgl.check_blacklist(args.url)
         print ' %s' % fgl.check_reputation(args.url)
+    else:
+        print ' Blacklist: %s' % fgl.check_blacklist(args.url)
+        print ' %s' % fgl.check_reputation(args.url)
+    print ''
 
 if __name__ == '__main__':
     main()
