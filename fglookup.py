@@ -79,22 +79,23 @@ class FGLookup:
         try:
             self._represult = qr.read()
             soup = BeautifulSoup(self._represult)
-            test = soup.find_all(class_='graph_inner')
+            sections = soup.find_all(class_='graph_inner')
 
             # Loop through the data sections
-            for x in range(0, len(test)):
-                # Check the Section names
-                if test[x].h2.string.startswith('WF Rating History'):
+            for data_section in sections:
+                # Section contains the date/time and Rating Data.
+                if data_section.h2.string.startswith('WF Rating History'):
                     result['Rating_History'] = {}
-                    rows = test[x].find_all('tr')
+                    rows = data_section.find_all('tr')
                     ratings = []
                     for row_data in rows:
                         cells = row_data.find_all('td')
                         ratings.append((cells[0].string, cells[1].string))
                     result['Rating_History'] = ratings
-                elif test[x].h2.string.startswith('IP'):
+                # Section contains IPs used by the domain
+                elif data_section.h2.string.startswith('IP'):
                     result['IP_Info'] = {}
-                    rows = test[x].find_all('tr')
+                    rows = data_section.find_all('tr')
                     iplist = []
                     for row_data in rows:
                         cells = row_data.find_all('td')
@@ -103,9 +104,11 @@ class FGLookup:
                             for ip in ips:
                                 iplist.append(ip.string)
                     result['IP_Info'] = iplist
-                elif test[x].h2.string.startswith('Shares the domain'):
+                # Section contains information on hosts
+                # This looks to list either the most recent or frequent hosts.
+                elif data_section.h2.string.startswith('Shares the domain'):
                     result['Shared_Domains'] = {}
-                    rows = test[x].find_all('tr')
+                    rows = data_section.find_all('tr')
                     domlist = []
                     for row_data in rows:
                         cells = row_data.find_all('td')
@@ -114,6 +117,11 @@ class FGLookup:
                             for host in hosts:
                                 domlist.append(host.string)
                     result['Shared_Domains'] = domlist
+                '''
+                TODO: When querying using an IP a couple different sections
+                      are available. But I'm not sure if they are useful. The
+                      Geo-IP section seems to be blank.
+                '''
 
             result['Category'] = soup.h3.string.split(':')[1].lstrip(' ')
         except urllib2.URLError as e:
