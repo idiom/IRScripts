@@ -79,9 +79,9 @@ class BHistory:
         ctime = self.calctime(days)
 
         if self.browsertype == 0:            
-            self.cursor.execute('''SELECT url, id, datetime(((last_visit_time-11644473600000000)/1000000),'unixepoch','localtime') 
+            self.cursor.execute('''SELECT url, id, datetime(((last_visit_time/1000000)-11644473600),'unixepoch','localtime') 
                                 as last_visit_time
-                                FROM urls where last_visit_time >= %d''' % ctime)
+                                FROM urls where ((last_visit_time/1000000)-11644473600) >= %d''' % ctime)
         else:
 
             self.cursor.execute('''SELECT moz_places.url, id, 
@@ -101,16 +101,16 @@ class BHistory:
         
         '''
         Calculate the time offset based on the last entry in moz_places. 
-        '''        
+        '''                    
         
-        print self.lastvisittime
-        if self.browsertype == 0x0:
-            nbase = datetime.fromtimestamp((self.lastvisittime-11644473600)/1000000.0)
+        if self.browsertype == 0x0:            
+            nbase = datetime.fromtimestamp(((self.lastvisittime/1000000)-11644473600))
+            bdate = time.mktime(datetime(nbase.year,nbase.month,nbase.day,0,0,0).timetuple())                                    
+            return (bdate - (86400 * int(days)))
         else:
-            nbase = datetime.fromtimestamp(self.lastvisittime/1000000.0)
-        bdate = time.mktime(datetime(nbase.year,nbase.month,nbase.day,0,0,0).timetuple())*1000000
-        
-        return (bdate - ((86400 * int(days)) * 1000000))
+            nbase = datetime.fromtimestamp(self.lastvisittime/1000000.0)            
+            bdate = time.mktime(datetime(nbase.year,nbase.month,nbase.day,0,0,0).timetuple())*1000000
+            return (bdate - ((86400 * int(days)) * 1000000))
  
     def sitereview(self,target_url):
         
