@@ -156,18 +156,21 @@ def main():
     urls = ffh.gethistory(args.days)
     for url in urls:
         if args.sitereview:
-            if args.exclude not in url[1]:
+            if args.exclude:
+                if args.exclude not in url[1]:
+                    sitedata = ffh.sitereview(url[1])
+            else:
                 sitedata = ffh.sitereview(url[1])
-                print
-                print '==================================='
-                print
-                print 'Date:      %s' % url[0]
-                print 'URL:       %s' % url[1]
-                print 'Category:  %s' % sitedata['category']
-                print 'Rate Date: %s' % sitedata['ratedate']
-                print 'Unrated:   %s' % sitedata['unrated']
-                print
-                print '==================================='
+            print
+            print '==================================='
+            print
+            print 'Date:      %s' % url[0]
+            print 'URL:       %s' % url[1]
+            print 'Category:  %s' % sitedata['category']
+            print 'Rate Date: %s' % sitedata['ratedate']
+            print 'Unrated:   %s' % sitedata['unrated']
+            print
+            print '==================================='
         else:
             print '%s - %s' % (url[0],url[1])
  
