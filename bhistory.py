@@ -101,8 +101,11 @@ class BHistory:
         
         '''
         Calculate the time offset based on the last entry in moz_places. 
-        '''
-        nbase = datetime.fromtimestamp(self.lastvisittime/1000000.0)
+        '''        
+        if self.browsertype == 0x0:
+            nbase = datetime.fromtimestamp((self.lastvisittime-11644473600000000)/1000000.0)
+        else:
+            nbase = datetime.fromtimestamp(self.lastvisittime/1000000.0)
         bdate = time.mktime(datetime(nbase.year,nbase.month,nbase.day,0,0,0).timetuple())*1000000
         return (bdate - ((86400 * int(days)) * 1000000))
  
