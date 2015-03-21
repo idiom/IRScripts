@@ -1,21 +1,15 @@
+__description__ = 'AlienSpy Decoder'
+__author__ = 'Sean Wilson'
+__version__ = '0.0.1'
+__date__ = '2015/03/18'
+
+
 import hashlib
 from StringIO import StringIO
 import zipfile
 import argparse
 from Crypto.Cipher import ARC4
 import os
-
-'''
-    Script to extract packed Adwind/AlienSpy jar
-
-    You can either extract the properties config.xml file or the encryted jar.
-
-    Payload is RC4 encrypted within the config.ini file.
-
-    Key is composed of the SHA256 value of (password.ini string + ALSKEOPQLFKJDUSIKSJAUIE)
-    The static string is set in the LoadPassword class.
-
-'''
 
 
 def getpassandconfig(jfname):
@@ -25,17 +19,20 @@ def getpassandconfig(jfname):
     ratdata = (pw, config)
     return ratdata
 
-def decryptpayload(ratdata):
+
+def decrypt_payload(ratdata):
     static_key = 'ALSKEOPQLFKJDUSIKSJAUIE'
     rcobj = ARC4.new(hashlib.sha256(ratdata[0]+static_key).hexdigest())
     data = rcobj.decrypt(ratdata[1])
     return data
 
-def extractprops(data):
+
+def extract_props(data):
     jtmp = StringIO()
     jtmp.write(data)
     jar = zipfile.ZipFile(jtmp)
     return StringIO(jar.read('config.xml')).read()
+
 
 def main():
     parser = argparse.ArgumentParser(description="Decrypt adwind jar.")
@@ -51,14 +48,14 @@ def main():
 
     if args.props:
         print 'Extracting Properties...'
-        propdata = extractprops(decryptpayload(rdata))
+        propdata = extract_props(decrypt_payload(rdata))
         out = open('config.xml', 'wb')
         out.write(propdata)
         out.close()
 
     if args.extract:
         outfile = open('out.jar', 'wb')
-        outfile.write(decryptpayload(rdata))
+        outfile.write(decrypt_payload(rdata))
         outfile.close()
 
 
