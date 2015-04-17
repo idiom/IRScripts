@@ -1,6 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf8 -*-
 
+__description__ = 'Script to work with Chrome or Firefox browser history.'
+__author__ = 'Sean Wilson'
+__version__ = '0.0.2'
+
 import urllib
 import urllib2
 import json
@@ -10,6 +14,7 @@ import time
 from datetime import datetime
 import argparse
 import os.path
+import re
  
 class BHistory:
     
@@ -123,22 +128,25 @@ class BHistory:
             response = urllib2.urlopen(req)
             data = json.load(response) 
 
-            #Don't hammer the service
+            # Don't hammer the service
             time.sleep(1)                                   
             
             sitedata = {}
-          
-            sitedata['category'] = data['categorization'].split('>')[1].split('<')[0]
-            sitedata['locked'] = data['locked']
-            sitedata['linkable'] = data['linkable']
-            sitedata['unrated'] = data['unrated']
-            sitedata['ratedate'] = 'Unknown'
             
-            if not sitedata['unrated']:
-                sitedata['ratedate'] = data['ratedate'].split(':')[1].split('<img')[0].strip()
-                                
+            if 'errorType' in data:                
+                sitedata = data
+            else:                
+                sitedata['category'] = data['categorization'].split('>')[1].split('<')[0]
+                sitedata['locked'] = data['locked']
+                sitedata['linkable'] = data['linkable']
+                sitedata['unrated'] = data['unrated']
+                sitedata['ratedate'] = 'Unknown'
+            
+                if not sitedata['unrated'] and data['ratedate']:                
+                    sitedata['ratedate'] = data['ratedate'].split(':')[1].split('<img')[0].strip()                                
         except Exception as e:
-            category = e                
+            sitedata['errorType'] = e                
+            sitedata['error'] = 'Property Error'     
         finally:
             return sitedata
  
@@ -147,30 +155,42 @@ def main():
     parser = argparse.ArgumentParser(description="A script to work with the Firefox History")
     parser.add_argument("file", help="The places.sqlite file to process")
     parser.add_argument("days", help="The number of days to process. This is the number of days since the last item in the moz_places table")    
-    parser.add_argument('--debug',dest='debug',action='store_true',help="Print debug messages ")
-    parser.add_argument('-s','--sitereview',dest='sitereview',action='store_true',help="Query bluecoat for URL category.")
-    parser.add_argument('-e','--exclude',dest='exclude',help="Strings to exclude from any external queries")
+    parser.add_argument('--debug',dest='debug', action='store_true', help="Print debug messages ")
+    parser.add_argument('-s','--sitereview', dest='sitereview',action='store_true', help="Query bluecoat for URL category.")
+    parser.add_argument('-e','--exclude', dest='exclude', help="Exclude urls using hte supplied regex")
     args = parser.parse_args()
 
     ffh = BHistory(args.file,args.debug)
     urls = ffh.gethistory(args.days)
+    
+    if args.exclude:
+        exreg = re.compile(args.exclude)
+    
     for url in urls:
-        if args.sitereview:
-            if args.exclude:
-                if args.exclude not in url[1]:
-                    sitedata = ffh.sitereview(url[1])
-            else:
-                sitedata = ffh.sitereview(url[1])
+        if args.exclude:
+            if exreg.match(url[1]):            
+                continue
+        if args.sitereview:        
+            sitedata = ffh.sitereview(url[1])            
+
             print
             print '==================================='
-            print
-            print 'Date:      %s' % url[0]
-            print 'URL:       %s' % url[1]
-            print 'Category:  %s' % sitedata['category']
-            print 'Rate Date: %s' % sitedata['ratedate']
-            print 'Unrated:   %s' % sitedata['unrated']
-            print
-            print '==================================='
+            print ' {:<12} {}'.format("Date:",url[0])
+            print ' {:<12} {}'.format("URL:",url[1])
+            
+            if 'errorType' in sitedata:
+                print ' {:<12} {}'.format('ErrorType:', sitedata['errorType'])
+                print ' {:<12} {}'.format('Error:', sitedata['error'])
+                if sitedata['errorType'] == 'intrusion':
+                    break                                                    
+            else:                    
+                print                    
+                print ' {:<12} {}'.format('Category:', sitedata['category'])
+                print ' {:<12} {}'.format('Rate Date:', sitedata['ratedate'])
+                print ' {:<12} {}'.format('Unrated:', sitedata['unrated'])
+                print
+                print '==================================='
+            
         else:
             print '%s - %s' % (url[0],url[1])
  
