@@ -12,4 +12,4 @@ Collection of Incident Response scripts.
  * fglookup.py          - Check FortiGuard Rep or Blacklist
  * dridex-xml.py        - Extract compressed Dridex document from xml file. 
  * alienspy-decrypt     - Extract AlienSpy Properties (config.xml) or the packed jar file.
- * hawkeye-decrypt.ps1  - Confinguration decryptor for Hawkeye/GolRoted Key Logger.
+ * hawkeye-decrypt.ps1  - Configuration decryptor for Hawkeye/GolRoted Key Logger.
