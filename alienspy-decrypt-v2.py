@@ -31,7 +31,13 @@ def extract_props(data):
     jtmp = StringIO()
     jtmp.write(data)
     jar = zipfile.ZipFile(jtmp)
-    return StringIO(jar.read('org/jsocket/resources/config.json')).read()
+    files = jar.namelist()
+
+    # It looks like the jar file may be customized with the configured 'nickname'
+    # loop through the files until we find the path to the configuration file 
+    for jfile in files:
+        if 'config.json' in jfile:
+            return StringIO(jar.read(jfile)).read()
 
 
 def main():
