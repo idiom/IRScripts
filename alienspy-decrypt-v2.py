@@ -1,7 +1,7 @@
 __description__ = 'AlienSpy Decoder v2'
-__author__ = 'Sean Wilson'
+__author__ = '@seanmw'
 __version__ = '0.0.1'
-__date__ = '2015/03/18'
+__date__ = '2015/07/27'
 
 
 import hashlib
